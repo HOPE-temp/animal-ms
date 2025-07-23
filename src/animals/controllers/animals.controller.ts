@@ -19,6 +19,7 @@ import { CreateAnimalDto } from '../dto/create-animal.dto';
 import {
   UpdateAnimalDto,
   UpdateStatusAnimalDto,
+  UpdateStatusSterilizationDto,
 } from '../dto/update-animal.dto';
 import { FilterAnimalsDto } from '../dto/filter-animals.dto';
 
@@ -56,6 +57,11 @@ export class AnimalsController {
     return this.animalsService.findOne(id);
   }
 
+  @Get(':id/availability')
+  consultaDisponibilidadAnimal(@Param('id', ParseIntPipe) id: number) {
+    return this.animalsService.availabilityAnimal(id);
+  }
+
   @Roles(RoleUser.ADMIN, RoleUser.VOLUNTEER)
   @Put(':id')
   @ApiOperation({ summary: 'Update animal information' })
@@ -74,6 +80,19 @@ export class AnimalsController {
     @Body() updateStatusAnimalDto: UpdateStatusAnimalDto,
   ) {
     return this.animalsService.updateStatus(id, updateStatusAnimalDto);
+  }
+
+  @Roles(RoleUser.ADMIN, RoleUser.VOLUNTEER)
+  @Put(':id/update_esterilization')
+  @ApiOperation({ summary: 'Update status animal' })
+  updateStatusSterilization(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateStatusAnimalDto: UpdateStatusSterilizationDto,
+  ) {
+    return this.animalsService.updateStatusSterilization(
+      id,
+      updateStatusAnimalDto,
+    );
   }
 
   @Roles(RoleUser.ADMIN, RoleUser.VOLUNTEER)

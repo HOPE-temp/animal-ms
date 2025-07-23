@@ -5,13 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 
 import { Animal } from '../entities/animal.entity';
 import { CreateAnimalDto } from '../dto/create-animal.dto';
 import {
   UpdateAnimalDto,
   UpdateStatusAnimalDto,
+  UpdateStatusSterilizationDto,
 } from '../dto/update-animal.dto';
 import { validateStatusFlow } from 'src/common/utils/statusFlow.util';
 import { animalStatusFlow } from '../flows/animalStatus.flow';
@@ -29,30 +30,64 @@ export class AnimalsService {
     return this.animalRepo.save(newAnimal);
   }
 
-  findAll(params?: FilterAnimalsDto) {
+  async findAll(params?: FilterAnimalsDto) {
     const options: FindManyOptions<Animal> = {
       take: 10,
       skip: 0,
     };
-
     if (params) {
+      const where: FindOptionsWhere<Animal> = {};
+      const { animalId, nickname, status } = params;
+
       const { limit, offset } = params;
       options.take = limit || 10;
       options.skip = offset || 0;
+
+      if (animalId) {
+        where.id = animalId;
+      }
+
+      if (nickname) {
+        where.nickname = nickname;
+      }
+
+      if (status) {
+        where.status = status;
+      }
+
+      options.where = where;
     }
 
-    return this.animalRepo.find(options);
+    const [items, total] = await this.animalRepo.findAndCount(options);
+
+    return {
+      items,
+      total,
+      limit: options.take,
+      offset: options.skip,
+    };
   }
 
   async findOne(id: number) {
     const animal = await this.animalRepo.findOne({
       where: { id },
-      relations: ['animalImages'],
     });
     if (!animal) {
       throw new NotFoundException(`Animal #${id} not found`);
     }
     return animal;
+  }
+  async availabilityAnimal(id: number) {
+    const animal = await this.animalRepo.findOne({ where: { id } });
+    if (!animal) {
+      throw new NotFoundException(`Animal #${id} not found`);
+    }
+    return {
+      animal_id: animal.id,
+      status:
+        animal.status == StatusAnimal.ADOPTED ? 'No disponible' : 'Disponible',
+      isSterilized: animal.isSterilized,
+    };
   }
 
   async update(id: number, updateAnimalDto: UpdateAnimalDto) {
@@ -62,11 +97,21 @@ export class AnimalsService {
     return this.animalRepo.save(animal);
   }
 
-
   async updateStatus(id: number, updateStatusAnimalDto: UpdateStatusAnimalDto) {
     const animal = await this.findOne(id);
 
     this.updateStatusVerified(animal, updateStatusAnimalDto.status);
+
+    this.animalRepo.merge(animal, updateStatusAnimalDto);
+
+    return this.animalRepo.save(animal);
+  }
+
+  async updateStatusSterilization(
+    id: number,
+    updateStatusAnimalDto: UpdateStatusSterilizationDto,
+  ) {
+    const animal = await this.findOne(id);
 
     this.animalRepo.merge(animal, updateStatusAnimalDto);
 

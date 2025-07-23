@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Animal } from 'src/animals/entities/animal.entity';
 import config from 'src/config/config';
 
 @Global()
@@ -18,7 +19,7 @@ import config from 'src/config/config';
           username,
           password,
           database,
-          // entities: [],
+          entities: [Animal],
           synchronize: false,
           timezone: '0:00',
         };

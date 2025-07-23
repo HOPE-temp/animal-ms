@@ -6,6 +6,7 @@ import { validationSchema } from './config/validationEnv';
 import configEnv from './config/config';
 import { DatabaseModule } from './database/database.module';
 import { AnimalsModule } from './animals/animals.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AnimalsModule } from './animals/animals.module';
       validationSchema,
       isGlobal: true,
     }),
+    AuthModule,
     AnimalsModule,
     DatabaseModule,
   ],
